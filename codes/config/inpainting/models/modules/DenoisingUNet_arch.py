@@ -12,7 +12,7 @@ from .module_util import (
     Upsample, Downsample,
     default_conv,
     ResBlock, Upsampler,
-    LinearAttention, Attention,
+    Attention,
     PreNorm, Residual)
 
 
@@ -56,20 +56,20 @@ class ConditionalUNet(nn.Module):
             self.downs.append(nn.ModuleList([
                 block_class(dim_in=dim_in, dim_out=dim_in, time_emb_dim=time_dim),
                 block_class(dim_in=dim_in, dim_out=dim_in, time_emb_dim=time_dim),
-                Residual(PreNorm(dim_in, LinearAttention(dim_in))),
+                Residual(PreNorm(dim_in, Attention(dim_in))),
                 Downsample(dim_in, dim_out) if i != (depth-1) else default_conv(dim_in, dim_out)
             ]))
 
             self.ups.insert(0, nn.ModuleList([
                 block_class(dim_in=dim_out + dim_in, dim_out=dim_out, time_emb_dim=time_dim),
                 block_class(dim_in=dim_out + dim_in, dim_out=dim_out, time_emb_dim=time_dim),
-                Residual(PreNorm(dim_out, LinearAttention(dim_out))),
+                Residual(PreNorm(dim_out, Attention(dim_out))),
                 Upsample(dim_out, dim_in) if i!=0 else default_conv(dim_out, dim_in)
             ]))
 
         mid_dim = nf * int(math.pow(2, depth))
         self.mid_block1 = block_class(dim_in=mid_dim, dim_out=mid_dim, time_emb_dim=time_dim)
-        self.mid_attn = Residual(PreNorm(mid_dim, LinearAttention(mid_dim)))
+        self.mid_attn = Residual(PreNorm(mid_dim, Attention(mid_dim)))
         self.mid_block2 = block_class(dim_in=mid_dim, dim_out=mid_dim, time_emb_dim=time_dim)
 
         self.final_res_block = block_class(dim_in=nf * 2, dim_out=nf, time_emb_dim=time_dim)
